@@ -1,5 +1,6 @@
 import { UserBusiness } from "../../src/business/UserBusiness"
 import { SignupInputDTO } from "../../src/dtos/userDTO"
+import { BadRequestError } from "../../src/errors/BadRequestError"
 import { HashManagerMock } from "../mocks/HashManagerMock"
 import { IdGeneratorMock } from "../mocks/IdGeneratorMock"
 import { TokenManagerMock } from "../mocks/TokenManagerMock"
@@ -22,5 +23,35 @@ describe("signup", () => {
 
         const response = await userBusiness.signup(input)
         expect(response.token).toBe("token-mock-normal")
+    })
+
+    test("deve disparar um erro caso o name não seja uma string", async () => {
+        try {
+            const input: SignupInputDTO = {
+                email: "example@email.com",
+                name: null,
+                password: "bananinha"
+            }
+
+            await userBusiness.signup(input)
+
+        } catch (error) {
+            if(error instanceof BadRequestError){
+                expect(error.message).toBe("'name' deve ser string")
+                expect(error.statusCode).toBe(400)
+            }
+        }
+    })
+
+    test("deve disparar um erro caso o e-mail fornecido já exista no banco de dados", async () => {
+        const input: SignupInputDTO = {
+            email: "normal@email.com",
+            name: "Nome legal",
+            password: "bananinha"
+        }        
+
+        expect(async () => {
+            await userBusiness.signup(input)
+        }).rejects.toThrow("'email' já existe")
     })
 })
